@@ -47,6 +47,19 @@ PLUGIN.CMD, e.g. epgsearch.UPDS.
 /etc/vdr/conf.avail/mcp.conf with --deny=DEL*,HITK, so the file shows what
 is denied; without the option the plugin uses the same list.
 
+System log
+----------
+
+With --log the server offers one more tool, vdr_log: the newest lines of the
+systemd journal of VDR (unit vdr.service, or the one given as --log=UNIT),
+optionally filtered by a text. The tool is off by default, because VDR runs as
+the user vdr, which may not read the journal. To use it:
+
+  adduser vdr systemd-journal
+
+and restart VDR. Note that VDR can then read the whole system journal, not
+only its own lines. The package does not change any group by itself.
+
 Options
 -------
 
@@ -58,3 +71,5 @@ Options
   -d LIST,   --deny=LIST        SVDRP commands that are not offered
                                 (default: DEL*,HITK)
   -m BYTES,  --max-reply=BYTES  cut longer SVDRP replies (default: 262144)
+  -l,        --log[=UNIT]       offer the tool vdr_log with the journal of the
+                                systemd unit UNIT (default: vdr.service)

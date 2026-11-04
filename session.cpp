@@ -5,11 +5,14 @@
  */
 
 #include "session.h"
+#include "journal.h"
 #include "svdrp.h"
 #include <nlohmann/json.hpp>
 #include <vdr/tools.h>
 #include <unistd.h>
+#include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <exception>
 
 using json = nlohmann::json;
@@ -116,7 +119,38 @@ std::string cMcpSession::Instructions(void)
          "plugin in front of the underscore. Pass the arguments in 'args' exactly as "
          "SVDRP expects them (see the tool description). Channels, timers and recordings "
          "are addressed by the numbers the LST* commands return. Commands on the deny "
-         "list of this server are not offered.";
+         "list of this server are not offered." +
+         (config.logUnit.empty() ? std::string("") :
+          " The tool vdr_log shows the system log of VDR (" + config.logUnit + ").");
+}
+
+static const char *LOG_TOOL = "vdr_log";
+#define LOG_LINES_DEFAULT 100
+#define LOG_LINES_MAX     1000
+
+static json LogTool(const std::string &Unit)
+{
+  json lines = json::object();
+  lines["type"] = "integer";
+  lines["minimum"] = 1;
+  lines["maximum"] = LOG_LINES_MAX;
+  lines["description"] = "number of log lines, the newest ones (default 100)";
+  json filter = json::object();
+  filter["type"] = "string";
+  filter["description"] = "only lines containing this text, case insensitive (optional)";
+  json props = json::object();
+  props["lines"] = lines;
+  props["filter"] = filter;
+  json schema = json::object();
+  schema["type"] = "object";
+  schema["properties"] = props;
+  json tool = json::object();
+  tool["name"] = LOG_TOOL;
+  tool["description"] = "System log (systemd journal) of VDR, unit " + Unit +
+                        ": the newest lines, oldest first, optionally filtered. Shows "
+                        "recording errors, plugin messages, start and stop of VDR.";
+  tool["inputSchema"] = schema;
+  return tool;
 }
 
 bool cMcpSession::BuildTools(std::string &Error)
@@ -313,16 +347,49 @@ std::string cMcpSession::Handle(const std::string &Line)
            tool["inputSchema"] = schema;
            list.push_back(tool);
            }
+       if (!config.logUnit.empty())
+          list.push_back(LogTool(config.logUnit));
        json r = json::object();
        r["tools"] = list;
        return Result(id, r);
        }
 
     if (method == "tools/call") {
+       std::string name = params.contains("name") && params["name"].is_string() ? params["name"].get<std::string>() : "";
+       if (name == LOG_TOOL && !config.logUnit.empty()) {
+          int n = LOG_LINES_DEFAULT;
+          std::string filter;
+          if (params.contains("arguments") && params["arguments"].is_object()) {
+             const json &a = params["arguments"];
+             if (a.contains("lines") && a["lines"].is_number_integer())
+                n = a["lines"].get<int>();
+             else if (a.contains("lines") && a["lines"].is_string())
+                n = atoi(a["lines"].get<std::string>().c_str());
+             if (a.contains("filter") && a["filter"].is_string())
+                filter = a["filter"].get<std::string>();
+             }
+          n = std::max(1, std::min(n, LOG_LINES_MAX));
+          bool isError = true;
+          std::string text = ReadJournal(config.logUnit, n, filter, isError);
+          if (text.size() > config.maxReply) { // keep the newest lines
+             size_t cut = text.size() - config.maxReply;
+             size_t nl = text.find('\n', cut);
+             text = "[older lines cut]\n" + (nl == std::string::npos ? text.substr(cut) : text.substr(nl + 1));
+             }
+          isyslog("mcp: %s %d%s%s -> %s", LOG_TOOL, n, filter.empty() ? "" : " ", filter.c_str(), isError ? "error" : "ok");
+          json item = json::object();
+          item["type"] = "text";
+          item["text"] = text;
+          json content = json::array();
+          content.push_back(item);
+          json r = json::object();
+          r["content"] = content;
+          r["isError"] = isError;
+          return Result(id, r);
+          }
        std::string error;
        if (!toolsBuilt && !BuildTools(error))
           return Error(id, -32603, error);
-       std::string name = params.contains("name") && params["name"].is_string() ? params["name"].get<std::string>() : "";
        std::string args;
        if (params.contains("arguments") && params["arguments"].is_object()) {
           const json &a = params["arguments"];

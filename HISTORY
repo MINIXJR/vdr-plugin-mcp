@@ -1,6 +1,12 @@
 VDR Plugin 'mcp' Revision History
 ---------------------------------
 
+2026-11-04: Version 0.2.0
+
+- New tool vdr_log (option --log[=UNIT], off by default): the newest lines of
+  the systemd journal of VDR, optionally filtered by a text. Needs the user
+  vdr in the group systemd-journal.
+
 2026-11-04: Version 0.1.2
 
 - mcp.conf sets --deny=DEL*,HITK, so the file shows what is denied. The

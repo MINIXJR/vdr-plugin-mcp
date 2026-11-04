@@ -13,7 +13,7 @@
 #include <getopt.h>
 #include <cstdlib>
 
-static const char *VERSION     = "0.1.2";
+static const char *VERSION     = "0.2.0";
 static const char *DESCRIPTION = trNOOP("MCP server for the SVDRP commands");
 
 static std::vector<std::string> SplitList(const char *s)
@@ -61,7 +61,10 @@ const char *cPluginMcp::CommandLineHelp(void)
     "  -d LIST,   --deny=LIST        SVDRP commands that are not offered, comma separated;\n"
     "                                a trailing '*' matches any rest, PLUGIN.CMD a single\n"
     "                                plugin command (default: DEL*,HITK), --deny= offers all\n"
-    "  -m BYTES,  --max-reply=BYTES  cut longer SVDRP replies (default: 262144)\n";
+    "  -m BYTES,  --max-reply=BYTES  cut longer SVDRP replies (default: 262144)\n"
+    "  -l,        --log[=UNIT]       offer the tool vdr_log with the journal of the\n"
+    "                                systemd unit UNIT (default: vdr.service); the user\n"
+    "                                vdr must be in the group systemd-journal\n";
 }
 
 bool cPluginMcp::ProcessArgs(int argc, char *argv[])
@@ -72,16 +75,18 @@ bool cPluginMcp::ProcessArgs(int argc, char *argv[])
     { "svdrp-port", required_argument, NULL, 's' },
     { "deny",       required_argument, NULL, 'd' },
     { "max-reply",  required_argument, NULL, 'm' },
+    { "log",        optional_argument, NULL, 'l' },
     { NULL,         0,                 NULL,  0  }
     };
   int c;
-  while ((c = getopt_long(argc, argv, "b:p:s:d:m:", long_options, NULL)) != -1) {
+  while ((c = getopt_long(argc, argv, "b:p:s:d:m:l::", long_options, NULL)) != -1) {
         switch (c) {
           case 'b': config.bind = optarg; break;
           case 'p': config.port = atoi(optarg); break;
           case 's': config.svdrpPort = atoi(optarg); break;
           case 'd': config.deny = SplitList(optarg); break;
           case 'm': config.maxReply = strtoul(optarg, NULL, 10); break;
+          case 'l': config.logUnit = (optarg && *optarg) ? optarg : "vdr.service"; break;
           default:  return false;
           }
         }
@@ -97,6 +102,8 @@ bool cPluginMcp::ProcessArgs(int argc, char *argv[])
 bool cPluginMcp::Start(void)
 {
   config.version = VERSION;
+  if (!config.logUnit.empty())
+     isyslog("mcp: tool vdr_log reads the journal of %s", config.logUnit.c_str());
   server = new cMcpServer(config);
   if (!server->Open())
      esyslog("mcp: server not started");

@@ -18,6 +18,7 @@ struct cMcpConfig {
   int svdrpPort = 6419;
   std::vector<std::string> deny = { "DEL*", "HITK" };
   size_t maxReply = 262144;
+  std::string logUnit;     // systemd unit for the tool vdr_log, empty = tool off
   // true if the SVDRP command (of the given plugin, empty for VDR itself) is on the deny list
   bool Denied(const std::string &Plugin, const std::string &Command) const;
   };

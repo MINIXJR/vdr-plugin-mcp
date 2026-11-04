@@ -39,13 +39,15 @@ PACKAGE = vdr-$(ARCHIVE)
 
 SOFILE = libvdr-$(PLUGIN).so
 
-### Includes and defines (nlohmann/json is header only):
+### Includes, defines and libraries (nlohmann/json is header only):
 
 DEFINES += -DPLUGIN_NAME_I18N='"$(PLUGIN)"'
+INCLUDES += $(shell $(PKG_CONFIG) --cflags libsystemd)
+LIBS += $(shell $(PKG_CONFIG) --libs libsystemd)
 
 ### The object files:
 
-OBJS = $(PLUGIN).o server.o session.o svdrp.o
+OBJS = $(PLUGIN).o journal.o server.o session.o svdrp.o
 
 ### The main target:
 
