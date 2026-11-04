@@ -16,7 +16,7 @@ struct cMcpConfig {
   std::string bind = "127.0.0.1";
   int port = 6420;
   int svdrpPort = 6419;
-  std::vector<std::string> deny = { "DEL*" };
+  std::vector<std::string> deny = { "DEL*", "HITK" };
   size_t maxReply = 262144;
   // true if the SVDRP command (of the given plugin, empty for VDR itself) is on the deny list
   bool Denied(const std::string &Plugin, const std::string &Command) const;

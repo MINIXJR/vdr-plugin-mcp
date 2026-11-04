@@ -40,8 +40,9 @@ The VDR host needs socat for that. The commands are sent to the local SVDRP
 port, so 127.0.0.1 must be allowed in svdrphosts.conf (the default).
 
 Commands that change or delete things can be hidden with --deny. The default
-is DEL*, which hides DELC, DELR, DELT and every plugin command starting with
-DEL. A single plugin command is denied as PLUGIN.CMD, e.g. epgsearch.UPDS.
+is DEL*,HITK: DEL* hides DELC, DELR, DELT and every plugin command starting with
+DEL, HITK the remote control keys. A single plugin command is denied as
+PLUGIN.CMD, e.g. epgsearch.UPDS.
 --deny= without a list offers every command.
 
 Options
@@ -53,5 +54,5 @@ Options
   -p PORT,   --port=PORT        TCP port of the MCP server (default: 6420)
   -s PORT,   --svdrp-port=PORT  SVDRP port of this VDR (default: 6419)
   -d LIST,   --deny=LIST        SVDRP commands that are not offered
-                                (default: DEL*)
+                                (default: DEL*,HITK)
   -m BYTES,  --max-reply=BYTES  cut longer SVDRP replies (default: 262144)

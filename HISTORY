@@ -1,6 +1,11 @@
 VDR Plugin 'mcp' Revision History
 ---------------------------------
 
+2026-11-04: Version 0.1.1
+
+- HITK (remote control keys) is denied by default, the default deny list is
+  now DEL*,HITK.
+
 2026-11-04: Version 0.1.0
 
 - Initial revision: MCP server on 127.0.0.1:6420 (MCP stdio format over TCP,

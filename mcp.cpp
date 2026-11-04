@@ -13,7 +13,7 @@
 #include <getopt.h>
 #include <cstdlib>
 
-static const char *VERSION     = "0.1.0";
+static const char *VERSION     = "0.1.1";
 static const char *DESCRIPTION = trNOOP("MCP server for the SVDRP commands");
 
 static std::vector<std::string> SplitList(const char *s)
@@ -60,7 +60,7 @@ const char *cPluginMcp::CommandLineHelp(void)
     "  -s PORT,   --svdrp-port=PORT  SVDRP port of this VDR (default: 6419)\n"
     "  -d LIST,   --deny=LIST        SVDRP commands that are not offered, comma separated;\n"
     "                                a trailing '*' matches any rest, PLUGIN.CMD a single\n"
-    "                                plugin command (default: DEL*), --deny= offers all\n"
+    "                                plugin command (default: DEL*,HITK), --deny= offers all\n"
     "  -m BYTES,  --max-reply=BYTES  cut longer SVDRP replies (default: 262144)\n";
 }
 
