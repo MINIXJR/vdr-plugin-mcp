@@ -1,6 +1,11 @@
 VDR Plugin 'mcp' Revision History
 ---------------------------------
 
+2026-11-04: Version 0.2.1
+
+- vdr_log skips the plugin's own log lines of vdr_log calls, which contain
+  the filter text and therefore matched every filter.
+
 2026-11-04: Version 0.2.0
 
 - New tool vdr_log (option --log[=UNIT], off by default): the newest lines of

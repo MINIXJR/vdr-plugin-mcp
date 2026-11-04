@@ -13,7 +13,7 @@
 #include <getopt.h>
 #include <cstdlib>
 
-static const char *VERSION     = "0.2.0";
+static const char *VERSION     = "0.2.1";
 static const char *DESCRIPTION = trNOOP("MCP server for the SVDRP commands");
 
 static std::vector<std::string> SplitList(const char *s)

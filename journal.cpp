@@ -47,6 +47,8 @@ std::string ReadJournal(const std::string &Unit, int Lines, const std::string &F
   while ((int)lines.size() < Lines && scanned < MAX_SCAN && sd_journal_previous(j) > 0) {
         scanned++;
         std::string msg = Field(j, "MESSAGE");
+        if (msg.find("mcp: vdr_log ") != std::string::npos)
+           continue; // our own log of vdr_log calls would match every filter
         if (!filter.empty() && Lower(msg).find(filter) == std::string::npos)
            continue;
         uint64_t usec = 0;
