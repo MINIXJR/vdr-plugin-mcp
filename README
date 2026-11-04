@@ -43,7 +43,9 @@ Commands that change or delete things can be hidden with --deny. The default
 is DEL*,HITK: DEL* hides DELC, DELR, DELT and every plugin command starting with
 DEL, HITK the remote control keys. A single plugin command is denied as
 PLUGIN.CMD, e.g. epgsearch.UPDS.
---deny= without a list offers every command.
+--deny= without a list offers every command. The Debian package ships
+/etc/vdr/conf.avail/mcp.conf with --deny=DEL*,HITK, so the file shows what
+is denied; without the option the plugin uses the same list.
 
 Options
 -------

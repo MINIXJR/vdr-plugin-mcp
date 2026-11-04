@@ -1,6 +1,11 @@
 VDR Plugin 'mcp' Revision History
 ---------------------------------
 
+2026-11-04: Version 0.1.2
+
+- mcp.conf sets --deny=DEL*,HITK, so the file shows what is denied. The
+  same list stays the default if the option is missing.
+
 2026-11-04: Version 0.1.1
 
 - HITK (remote control keys) is denied by default, the default deny list is
