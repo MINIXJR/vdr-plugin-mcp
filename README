@@ -60,6 +60,28 @@ the user vdr, which may not read the journal. To use it:
 and restart VDR. Note that VDR can then read the whole system journal, not
 only its own lines. The package does not change any group by itself.
 
+Recordings beyond SVDRP
+-----------------------
+
+SVDRP can list, move, cut and replay recordings, but it cannot show or set
+editing marks, and it cannot regenerate the index. Three tools fill that gap:
+
+  vdr_marks     editing marks of a recording, its length before and after
+                cutting
+  vdr_setmarks  replaces all editing marks (h:mm:ss[.ff]), aligned to I-frames
+  vdr_genindex  regenerates the index in the background like vdr --genindex
+                and thereby counts the errors of the recording (line O of
+                vdr_LSTR <id>, -1 = not checked)
+
+vdr_setmarks and vdr_genindex refuse recordings that are being recorded,
+replayed or cut; vdr_genindex works on one recording at a time. Each of the
+three can be hidden with --deny, e.g. --deny=DEL*,HITK,vdr_setmarks.
+
+A typical chain: vdr_LSTR <id> path, markad_MARK <path>, wait until
+markad_STATUS reports no running markad, vdr_marks <id> to check the marks,
+then vdr_EDIT <id>. Note that the reply of markad_STATUS when it is done
+("no active recording with running markad found") contains the word "running".
+
 Options
 -------
 

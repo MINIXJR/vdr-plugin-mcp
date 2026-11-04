@@ -1,6 +1,12 @@
 VDR Plugin 'mcp' Revision History
 ---------------------------------
 
+2026-11-04: Version 0.3.0
+
+- New tools vdr_marks, vdr_setmarks and vdr_genindex: read and replace the
+  editing marks of a recording, regenerate its index in the background and
+  thereby count its errors. SVDRP offers neither.
+
 2026-11-04: Version 0.2.1
 
 - vdr_log skips the plugin's own log lines of vdr_log calls, which contain

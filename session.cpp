@@ -6,6 +6,7 @@
 
 #include "session.h"
 #include "journal.h"
+#include "recording.h"
 #include "svdrp.h"
 #include <nlohmann/json.hpp>
 #include <vdr/tools.h>
@@ -121,7 +122,91 @@ std::string cMcpSession::Instructions(void)
          "are addressed by the numbers the LST* commands return. Commands on the deny "
          "list of this server are not offered." +
          (config.logUnit.empty() ? std::string("") :
-          " The tool vdr_log shows the system log of VDR (" + config.logUnit + ").");
+          " The tool vdr_log shows the system log of VDR (" + config.logUnit + ").") +
+         " vdr_marks, vdr_setmarks and vdr_genindex work on recordings beyond SVDRP: "
+         "editing marks (e.g. check the marks of markad before vdr_EDIT cuts) and the "
+         "regeneration of the index, which also counts the errors of a recording.";
+}
+
+// --- Tools beyond SVDRP: editing marks, index ------------------------------
+
+static const char *MARKS_TOOL    = "vdr_marks";
+static const char *SETMARKS_TOOL = "vdr_setmarks";
+static const char *GENINDEX_TOOL = "vdr_genindex";
+
+static json IdProperty(void)
+{
+  json id = json::object();
+  id["type"] = "integer";
+  id["description"] = "id of the recording, as listed by vdr_LSTR";
+  return id;
+}
+
+static json RecordingTool(const char *Name, const std::string &Description, bool WithMarks)
+{
+  json props = json::object();
+  props["id"] = IdProperty();
+  json required = json::array();
+  required.push_back("id");
+  if (WithMarks) {
+     json item = json::object();
+     item["type"] = "string";
+     json marks = json::object();
+     marks["type"] = "array";
+     marks["items"] = item;
+     marks["minItems"] = 1;
+     marks["description"] = "all marks of the recording as h:mm:ss or h:mm:ss.ff, "
+                            "alternating begin and end of the parts to keep";
+     props["marks"] = marks;
+     required.push_back("marks");
+     }
+  json schema = json::object();
+  schema["type"] = "object";
+  schema["properties"] = props;
+  schema["required"] = required;
+  json tool = json::object();
+  tool["name"] = Name;
+  tool["description"] = Description;
+  tool["inputSchema"] = schema;
+  return tool;
+}
+
+static std::vector<json> RecordingTools(const cMcpConfig &Config)
+{
+  std::vector<json> v;
+  if (!Config.Denied("", MARKS_TOOL))
+     v.push_back(RecordingTool(MARKS_TOOL,
+       "Lists the editing marks of a recording (time, begin/end, number of sequences) "
+       "and its length before and after cutting. SVDRP itself cannot show marks.", false));
+  if (!Config.Denied("", SETMARKS_TOOL))
+     v.push_back(RecordingTool(SETMARKS_TOOL,
+       "Replaces ALL editing marks of a recording; VDR aligns them to the nearest "
+       "I-frame. Refused while the recording is recorded, replayed or cut. "
+       "Cut with vdr_EDIT afterwards.", true));
+  if (!Config.Denied("", GENINDEX_TOOL))
+     v.push_back(RecordingTool(GENINDEX_TOOL,
+       "Regenerates the index file of a recording in the background, like vdr --genindex, "
+       "and thereby counts its errors (line O of vdr_LSTR <id>; -1 means not checked). "
+       "One recording at a time; refused while it is in use.", false));
+  return v;
+}
+
+static bool GetId(const json &Args, int &Id)
+{
+  if (!Args.contains("id"))
+     return false;
+  if (Args["id"].is_number_integer()) {
+     Id = Args["id"].get<int>();
+     return true;
+     }
+  if (Args["id"].is_string()) {
+     std::string s = Args["id"].get<std::string>();
+     if (s.empty() || s.find_first_not_of("0123456789") != std::string::npos)
+        return false;
+     Id = atoi(s.c_str());
+     return true;
+     }
+  return false;
 }
 
 static const char *LOG_TOOL = "vdr_log";
@@ -349,6 +434,8 @@ std::string cMcpSession::Handle(const std::string &Line)
            }
        if (!config.logUnit.empty())
           list.push_back(LogTool(config.logUnit));
+       for (auto &t : RecordingTools(config))
+           list.push_back(t);
        json r = json::object();
        r["tools"] = list;
        return Result(id, r);
@@ -377,6 +464,38 @@ std::string cMcpSession::Handle(const std::string &Line)
              text = "[older lines cut]\n" + (nl == std::string::npos ? text.substr(cut) : text.substr(nl + 1));
              }
           isyslog("mcp: %s %d%s%s -> %s", LOG_TOOL, n, filter.empty() ? "" : " ", filter.c_str(), isError ? "error" : "ok");
+          json item = json::object();
+          item["type"] = "text";
+          item["text"] = text;
+          json content = json::array();
+          content.push_back(item);
+          json r = json::object();
+          r["content"] = content;
+          r["isError"] = isError;
+          return Result(id, r);
+          }
+       if ((name == MARKS_TOOL || name == SETMARKS_TOOL || name == GENINDEX_TOOL) && !config.Denied("", name)) {
+          json a = params.contains("arguments") && params["arguments"].is_object() ? params["arguments"] : json::object();
+          bool isError = true;
+          std::string text;
+          int recId = 0;
+          if (!GetId(a, recId))
+             text = "argument 'id' (number of the recording from vdr_LSTR) is missing or invalid";
+          else if (name == MARKS_TOOL)
+             text = ReadMarks(recId, isError);
+          else if (name == GENINDEX_TOOL)
+             text = StartGenIndex(recId, isError);
+          else {
+             std::vector<std::string> marks;
+             if (a.contains("marks") && a["marks"].is_array()) {
+                for (auto &m : a["marks"]) {
+                    if (m.is_string())
+                       marks.push_back(m.get<std::string>());
+                    }
+                }
+             text = WriteMarks(recId, marks, isError);
+             }
+          isyslog("mcp: %s %d -> %s", name.c_str(), recId, isError ? "error" : "ok");
           json item = json::object();
           item["type"] = "text";
           item["text"] = text;

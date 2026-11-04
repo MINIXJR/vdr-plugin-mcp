@@ -47,7 +47,7 @@ LIBS += $(shell $(PKG_CONFIG) --libs libsystemd)
 
 ### The object files:
 
-OBJS = $(PLUGIN).o journal.o server.o session.o svdrp.o
+OBJS = $(PLUGIN).o journal.o recording.o server.o session.o svdrp.o
 
 ### The main target:
 
