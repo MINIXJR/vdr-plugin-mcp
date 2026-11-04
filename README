@@ -1,0 +1,57 @@
+This is a "plugin" for the Video Disk Recorder (VDR).
+
+Written by:                  Frank Neumann <fnu@vdr-portal.de>
+                             The code was written with Claude (Anthropic).
+
+Project's homepage:          https://github.com/unf/vdr-plugin-mcp
+
+Latest version available at: https://github.com/unf/vdr-plugin-mcp
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+See the file COPYING for more information.
+
+Description
+-----------
+
+The plugin is a Model Context Protocol (MCP) server. It offers every SVDRP
+command of VDR and of the loaded plugins as an MCP tool, so an AI assistant
+like Claude can list timers, search the EPG or read recordings of this VDR.
+
+The tools are built at runtime from SVDRP HELP: VDR's own commands are named
+vdr_<CMD> (vdr_LSTT, vdr_NEWT, ...), plugin commands <plugin>_<CMD>
+(epgsearch_LSTS, satip_INFO, ...). The help page of each command is the tool
+description, the only argument "args" takes the command arguments exactly as
+SVDRP expects them. Only the plugins that are loaded show up.
+
+Transport and security
+----------------------
+
+The server listens on 127.0.0.1:6420 and speaks MCP over a plain TCP stream,
+one JSON-RPC message per line (the MCP stdio format). It has no
+authentication of its own. Access from another machine goes through SSH,
+which takes care of encryption and login:
+
+  claude mcp add vdr -- ssh <user>@<vdr-host> socat STDIO TCP:127.0.0.1:6420
+
+The VDR host needs socat for that. The commands are sent to the local SVDRP
+port, so 127.0.0.1 must be allowed in svdrphosts.conf (the default).
+
+Commands that change or delete things can be hidden with --deny. The default
+is DEL*, which hides DELC, DELR, DELT and every plugin command starting with
+DEL. A single plugin command is denied as PLUGIN.CMD, e.g. epgsearch.UPDS.
+--deny= without a list offers every command.
+
+Options
+-------
+
+  -b ADDR,   --bind=ADDR        address to listen on (default: 127.0.0.1),
+                                other addresses are reachable WITHOUT
+                                authentication
+  -p PORT,   --port=PORT        TCP port of the MCP server (default: 6420)
+  -s PORT,   --svdrp-port=PORT  SVDRP port of this VDR (default: 6419)
+  -d LIST,   --deny=LIST        SVDRP commands that are not offered
+                                (default: DEL*)
+  -m BYTES,  --max-reply=BYTES  cut longer SVDRP replies (default: 262144)

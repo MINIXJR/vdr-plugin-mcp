@@ -1,0 +1,9 @@
+VDR Plugin 'mcp' Revision History
+---------------------------------
+
+2026-11-04: Version 0.1.0
+
+- Initial revision: MCP server on 127.0.0.1:6420 (MCP stdio format over TCP,
+  one JSON-RPC message per line) that offers every SVDRP command of VDR and
+  of the loaded plugins as a tool, built at runtime from SVDRP HELP.
+- Deny list for commands (--deny, default DEL*).
