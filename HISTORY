@@ -1,6 +1,14 @@
 VDR Plugin 'mcp' Revision History
 ---------------------------------
 
+2026-11-04: Version 0.4.0
+
+- MCP over HTTPS ("Streamable HTTP", --http=ADDR:PORT, off by default) for
+  clients without SSH, with API keys (ro/rw) managed over SVDRP
+  (PLUG mcp KEYADD/KEYLIST/KEYDEL) and a self-signed certificate created at
+  the first start. Read only keys see only listing tools (--ro-allow).
+- MCP clients cannot call the plugin's own SVDRP commands via vdr_PLUG.
+
 2026-11-04: Version 0.3.0
 
 - New tools vdr_marks, vdr_setmarks and vdr_genindex: read and replace the

@@ -56,6 +56,19 @@ bool cMcpConfig::Denied(const std::string &Plugin, const std::string &Command) c
   return false;
 }
 
+bool cMcpConfig::Allowed(const std::string &Plugin, const std::string &Command, bool ReadOnly) const
+{
+  if (Denied(Plugin, Command))
+     return false;
+  if (!ReadOnly)
+     return true;
+  for (auto &p : roAllow) {
+      if (Match(p, Plugin.empty() ? Command : Plugin + "." + Command))
+         return true;
+      }
+  return false;
+}
+
 static bool ValidCommand(const std::string &w)
 {
   if (w.empty() || w.size() > 32)
@@ -105,8 +118,9 @@ static std::string Error(const json &Id, int Code, const std::string &Message)
 
 // --- cMcpSession -----------------------------------------------------------
 
-cMcpSession::cMcpSession(const cMcpConfig &Config)
+cMcpSession::cMcpSession(const cMcpConfig &Config, bool ReadOnly)
 :config(Config)
+,readOnly(ReadOnly)
 ,toolsBuilt(false)
 {
 }
@@ -125,7 +139,9 @@ std::string cMcpSession::Instructions(void)
           " The tool vdr_log shows the system log of VDR (" + config.logUnit + ").") +
          " vdr_marks, vdr_setmarks and vdr_genindex work on recordings beyond SVDRP: "
          "editing marks (e.g. check the marks of markad before vdr_EDIT cuts) and the "
-         "regeneration of the index, which also counts the errors of a recording.";
+         "regeneration of the index, which also counts the errors of a recording." +
+         (readOnly ? std::string(" This client uses a read only key: only tools that list "
+                                 "or show something are offered.") : std::string(""));
 }
 
 // --- Tools beyond SVDRP: editing marks, index ------------------------------
@@ -171,19 +187,19 @@ static json RecordingTool(const char *Name, const std::string &Description, bool
   return tool;
 }
 
-static std::vector<json> RecordingTools(const cMcpConfig &Config)
+static std::vector<json> RecordingTools(const cMcpConfig &Config, bool ReadOnly)
 {
   std::vector<json> v;
-  if (!Config.Denied("", MARKS_TOOL))
+  if (Config.Allowed("", MARKS_TOOL, ReadOnly))
      v.push_back(RecordingTool(MARKS_TOOL,
        "Lists the editing marks of a recording (time, begin/end, number of sequences) "
        "and its length before and after cutting. SVDRP itself cannot show marks.", false));
-  if (!Config.Denied("", SETMARKS_TOOL))
+  if (Config.Allowed("", SETMARKS_TOOL, ReadOnly))
      v.push_back(RecordingTool(SETMARKS_TOOL,
        "Replaces ALL editing marks of a recording; VDR aligns them to the nearest "
        "I-frame. Refused while the recording is recorded, replayed or cut. "
        "Cut with vdr_EDIT afterwards.", true));
-  if (!Config.Denied("", GENINDEX_TOOL))
+  if (Config.Allowed("", GENINDEX_TOOL, ReadOnly))
      v.push_back(RecordingTool(GENINDEX_TOOL,
        "Regenerates the index file of a recording in the background, like vdr --genindex, "
        "and thereby counts its errors (line O of vdr_LSTR <id>; -1 means not checked). "
@@ -302,7 +318,7 @@ bool cMcpSession::BuildTools(std::string &Error)
       for (auto &cmd : s.commands) {
           if (s.plugin.empty() && Upper(cmd) == "QUIT")
              continue; // closes the SVDRP connection, nothing to offer
-          if (config.Denied(s.plugin, cmd))
+          if (!config.Allowed(s.plugin, cmd, readOnly))
              continue;
           std::string query = s.plugin.empty() ? "HELP " + cmd : "PLUG " + s.plugin + " HELP " + cmd;
           std::string help;
@@ -338,6 +354,11 @@ std::string cMcpSession::Call(const cMcpTool &Tool, const std::string &Args, boo
          c = ' '; // one command only
       }
   args = Trim(args);
+  if (Tool.plugin.empty() && Upper(Tool.command) == "PLUG") {
+     std::string a = Upper(args);
+     if (a == "MCP" || a.compare(0, 4, "MCP ") == 0)
+        return "the commands of the plugin mcp itself (API keys) are not available over MCP";
+     }
   std::string cmd = Tool.plugin.empty() ? Tool.command : "PLUG " + Tool.plugin + " " + Tool.command;
   if (!args.empty())
      cmd += " " + args;
@@ -432,9 +453,9 @@ std::string cMcpSession::Handle(const std::string &Line)
            tool["inputSchema"] = schema;
            list.push_back(tool);
            }
-       if (!config.logUnit.empty())
+       if (!config.logUnit.empty() && config.Allowed("", LOG_TOOL, readOnly))
           list.push_back(LogTool(config.logUnit));
-       for (auto &t : RecordingTools(config))
+       for (auto &t : RecordingTools(config, readOnly))
            list.push_back(t);
        json r = json::object();
        r["tools"] = list;
@@ -443,7 +464,7 @@ std::string cMcpSession::Handle(const std::string &Line)
 
     if (method == "tools/call") {
        std::string name = params.contains("name") && params["name"].is_string() ? params["name"].get<std::string>() : "";
-       if (name == LOG_TOOL && !config.logUnit.empty()) {
+       if (name == LOG_TOOL && !config.logUnit.empty() && config.Allowed("", LOG_TOOL, readOnly)) {
           int n = LOG_LINES_DEFAULT;
           std::string filter;
           if (params.contains("arguments") && params["arguments"].is_object()) {
@@ -474,7 +495,7 @@ std::string cMcpSession::Handle(const std::string &Line)
           r["isError"] = isError;
           return Result(id, r);
           }
-       if ((name == MARKS_TOOL || name == SETMARKS_TOOL || name == GENINDEX_TOOL) && !config.Denied("", name)) {
+       if ((name == MARKS_TOOL || name == SETMARKS_TOOL || name == GENINDEX_TOOL) && config.Allowed("", name, readOnly)) {
           json a = params.contains("arguments") && params["arguments"].is_object() ? params["arguments"] : json::object();
           bool isError = true;
           std::string text;

@@ -47,6 +47,49 @@ PLUGIN.CMD, e.g. epgsearch.UPDS.
 /etc/vdr/conf.avail/mcp.conf with --deny=DEL*,HITK, so the file shows what
 is denied; without the option the plugin uses the same list.
 
+MCP over HTTPS (clients without SSH)
+------------------------------------
+
+With --http=ADDR:PORT, e.g. --http=0.0.0.0:6421, the plugin also speaks MCP's
+"Streamable HTTP" transport at https://<vdr-host>:6421/mcp, for MCP clients
+that have no SSH: other machines in the LAN, agents, automation tools. It is
+off by default. The local server on 127.0.0.1:6420 stays as it is.
+
+Every request needs an API key in the header "Authorization: Bearer <key>".
+Keys are managed over SVDRP on the VDR host:
+
+  svdrpsend PLUG mcp KEYADD claude rw    creates a key, shown only once
+  svdrpsend PLUG mcp KEYLIST             name, role, date
+  svdrpsend PLUG mcp KEYDEL claude       revokes it at once
+
+The plugin stores only the SHA-256 hash of a key, in
+/var/lib/vdr/plugins/mcp/keys. MCP clients cannot reach these commands.
+
+A key is either rw or ro. rw may use every command that is not on the deny
+list. ro may only list and show: HELP, LSTC, LSTD, LSTE, LSTR, LSTT, NEXT,
+PING, STAT, vdr_log and vdr_marks; --ro-allow=LIST adds more, e.g.
+--ro-allow=epgsearch.LSTS,epgsearch.QRYS,satip.INFO.
+
+TLS: at the first start the plugin creates a self-signed certificate for the
+host names and IPv4 addresses of the VDR (EC P-256, 10 years) in
+/var/lib/vdr/plugins/mcp/cert.pem, the log shows its SHA-256 fingerprint. Copy
+it to the client and trust it there; for Claude Code (Node.js):
+
+  scp <vdr-host>:/var/lib/vdr/plugins/mcp/cert.pem vdr-mcp.pem
+  NODE_EXTRA_CA_CERTS=/path/to/vdr-mcp.pem
+  claude mcp add --transport http vdr https://<vdr-host>:6421/mcp \
+    --header "Authorization: Bearer <key>"
+
+Delete cert.pem and key.pem and restart VDR for a new certificate, e.g. after
+a change of the host name. --cert=FILE and --key=FILE use your own one.
+--http-plain switches TLS off, only for tests: the keys then travel
+unencrypted.
+
+The server answers each POST with application/json (no server-sent events),
+GET is refused with 405, DELETE ends a session. Requests carrying an Origin
+header are refused, as browsers send one and MCP clients do not (protection
+against DNS rebinding). Do not expose the port to the internet; use a VPN.
+
 System log
 ----------
 
@@ -95,3 +138,8 @@ Options
   -m BYTES,  --max-reply=BYTES  cut longer SVDRP replies (default: 262144)
   -l,        --log[=UNIT]       offer the tool vdr_log with the journal of the
                                 systemd unit UNIT (default: vdr.service)
+  -w ADDR:PORT, --http=ADDR:PORT  MCP over HTTPS with API keys (default: off)
+  -c FILE,   --cert=FILE        own TLS certificate
+  -k FILE,   --key=FILE         its private key
+  -n,        --http-plain       HTTP without TLS, only for tests
+  -r LIST,   --ro-allow=LIST    more commands for read only keys

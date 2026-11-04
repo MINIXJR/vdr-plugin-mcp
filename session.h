@@ -21,13 +21,14 @@ struct cMcpTool {
 class cMcpSession {
 private:
   const cMcpConfig &config;
+  bool readOnly;           // client with a read only API key
   std::vector<cMcpTool> tools;
   bool toolsBuilt;
   bool BuildTools(std::string &Error);
   std::string Call(const cMcpTool &Tool, const std::string &Args, bool &IsError);
   std::string Instructions(void);
 public:
-  cMcpSession(const cMcpConfig &Config);
+  cMcpSession(const cMcpConfig &Config, bool ReadOnly = false);
   // Handles one JSON-RPC message, returns the reply (empty for notifications).
   std::string Handle(const std::string &Line);
   };

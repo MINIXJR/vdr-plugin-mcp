@@ -42,12 +42,12 @@ SOFILE = libvdr-$(PLUGIN).so
 ### Includes, defines and libraries (nlohmann/json is header only):
 
 DEFINES += -DPLUGIN_NAME_I18N='"$(PLUGIN)"'
-INCLUDES += $(shell $(PKG_CONFIG) --cflags libsystemd)
-LIBS += $(shell $(PKG_CONFIG) --libs libsystemd)
+INCLUDES += $(shell $(PKG_CONFIG) --cflags libsystemd openssl)
+LIBS += $(shell $(PKG_CONFIG) --libs libsystemd openssl)
 
 ### The object files:
 
-OBJS = $(PLUGIN).o journal.o recording.o server.o session.o svdrp.o
+OBJS = $(PLUGIN).o http.o journal.o keys.o recording.o server.o session.o svdrp.o
 
 ### The main target:
 
