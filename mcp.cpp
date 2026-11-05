@@ -15,11 +15,13 @@
 #include <vdr/plugin.h>
 #include <getopt.h>
 #include <strings.h>
+#include <unistd.h>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <sstream>
 
-static const char *VERSION     = "0.4.0";
+static const char *VERSION     = "0.4.1";
 static const char *DESCRIPTION = trNOOP("MCP server for the SVDRP commands");
 
 static std::vector<std::string> SplitList(const char *s)
@@ -40,6 +42,36 @@ static std::vector<std::string> SplitList(const char *s)
          cur += *p;
       }
   return v;
+}
+
+// How a client reaches the HTTP server with the given key: the ready line for
+// Claude Code, the URL and header for others, the certificate to trust.
+static std::string ClientHint(const cMcpConfig &Config, const std::string &Key)
+{
+  if (Config.httpPort <= 0)
+     return "MCP over HTTP(S) is off, switch it on with --http=ADDR:PORT in mcp.conf.";
+  char name[256] = "localhost";
+  if (gethostname(name, sizeof(name)) != 0)
+     strcpy(name, "localhost");
+  name[sizeof(name) - 1] = 0;
+  std::string host = name;
+  std::string server = host.substr(0, host.find('.'));
+  const std::string &b = Config.httpBind;
+  if (b == "127.0.0.1" || b == "::1" || b == "localhost")
+     host = "localhost";
+  else if (!b.empty() && b != "0.0.0.0" && b != "::")
+     host = b;
+  std::string url = std::string(Config.httpTls ? "https" : "http") + "://" + host + ":" +
+                    std::to_string(Config.httpPort) + "/mcp";
+  std::string header = "Authorization: Bearer " + Key;
+  std::string s = "Claude Code:\n"
+                  "claude mcp add --transport http " + server + " " + url + " --header \"" + header + "\"\n"
+                  "Other MCP clients: URL " + url + ", HTTP header \"" + header + "\".";
+  if (Config.httpTls)
+     s += "\nThe client must trust the certificate " +
+          (Config.certFile.empty() ? Config.configDir + "/cert.pem" : Config.certFile) +
+          " (Node.js: NODE_EXTRA_CA_CERTS).";
+  return s;
 }
 
 class cPluginMcp : public cPlugin {
@@ -175,7 +207,8 @@ const char **cPluginMcp::SVDRPHelpPages(void)
     "KEYADD <name> ro|rw\n"
     "    Creates an API key for MCP over HTTP(S). ro keys may only list and\n"
     "    show, rw keys may use every command that is not denied. The key is\n"
-    "    shown only now, the plugin stores just its SHA-256 hash.",
+    "    shown only now, together with the command line for Claude Code;\n"
+    "    the plugin stores just its SHA-256 hash.",
     "KEYLIST\n"
     "    Lists the API keys: name, role and creation date.",
     "KEYDEL <name>\n"
@@ -203,8 +236,8 @@ cString cPluginMcp::SVDRPCommand(const char *Command, const char *Option, int &R
         return error.c_str();
         }
      isyslog("mcp: API key '%s' (%s) created", name.c_str(), role.c_str());
-     return cString::sprintf("API key '%s' (%s):\n%s\nUse it as HTTP header \"Authorization: Bearer %s\".\n"
-                             "It is shown only this once.", name.c_str(), role.c_str(), key.c_str(), key.c_str());
+     return cString::sprintf("API key '%s' (%s), shown only this once:\n%s\n%s", name.c_str(), role.c_str(),
+                             key.c_str(), ClientHint(config, key).c_str());
      }
   if (strcasecmp(Command, "KEYLIST") == 0) {
      auto keys = McpKeys.List();

@@ -80,6 +80,10 @@ it to the client and trust it there; for Claude Code (Node.js):
   claude mcp add --transport http vdr https://<vdr-host>:6421/mcp \
     --header "Authorization: Bearer <key>"
 
+KEYADD prints this command line ready to copy, with the host name, port and
+the new key. To replace a key, KEYDEL it and KEYADD it again; KEYADD never
+overwrites an existing key.
+
 Delete cert.pem and key.pem and restart VDR for a new certificate, e.g. after
 a change of the host name. --cert=FILE and --key=FILE use your own one.
 --http-plain switches TLS off, only for tests: the keys then travel
