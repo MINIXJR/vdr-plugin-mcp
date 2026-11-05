@@ -1,0 +1,17 @@
+vdr-plugin-mcp packaging
+========================
+
+The branch debian/trixie of https://github.com/unf/vdr-plugin-mcp
+holds the Debian packaging on top of the upstream tag v<version>. master
+stays plain upstream source.
+
+Build with git-buildpackage, the orig tarball is created from the tag:
+
+  git clone https://github.com/unf/vdr-plugin-mcp.git
+  cd vdr-plugin-mcp
+  git checkout debian/trixie
+  gbp buildpackage
+
+The package needs vdr-dev (>= 2.8.4) of the VDR it is built for.
+
+ -- Frank Neumann <fnu@vdr-portal.de>

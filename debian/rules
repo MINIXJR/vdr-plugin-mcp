@@ -1,0 +1,7 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --with vdrplugin
+
+override_dh_auto_install:
+	dh_auto_install --destdir=debian/vdr-plugin-mcp

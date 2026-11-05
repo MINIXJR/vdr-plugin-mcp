@@ -1,0 +1,54 @@
+vdr-plugin-mcp (0.4.1-1fnu0~trixie) trixie; urgency=medium
+
+  * New upstream release 0.4.1: KEYADD shows the command line for Claude
+    Code.
+
+ -- Frank Neumann <fnu@vdr-portal.de>  Thu, 05 Nov 2026 09:52:40 +0100
+
+vdr-plugin-mcp (0.4.0-1fnu0~trixie) trixie; urgency=medium
+
+  * New upstream release 0.4.0: MCP over HTTPS with API keys (--http,
+    off by default).
+  * Build-depend on libssl-dev, update the description.
+
+ -- Frank Neumann <fnu@vdr-portal.de>  Wed, 04 Nov 2026 17:04:26 +0100
+
+vdr-plugin-mcp (0.3.0-1fnu0~trixie) trixie; urgency=medium
+
+  * New upstream release 0.3.0: new tools vdr_marks, vdr_setmarks and
+    vdr_genindex.
+
+ -- Frank Neumann <fnu@vdr-portal.de>  Wed, 04 Nov 2026 16:52:19 +0100
+
+vdr-plugin-mcp (0.2.1-1fnu0~trixie) trixie; urgency=medium
+
+  * New upstream release 0.2.1: vdr_log skips its own log lines.
+
+ -- Frank Neumann <fnu@vdr-portal.de>  Wed, 04 Nov 2026 16:47:09 +0100
+
+vdr-plugin-mcp (0.2.0-1fnu0~trixie) trixie; urgency=medium
+
+  * New upstream release 0.2.0: new tool vdr_log (--log, off by
+    default).
+  * Build-depend on libsystemd-dev.
+
+ -- Frank Neumann <fnu@vdr-portal.de>  Wed, 04 Nov 2026 14:44:42 +0100
+
+vdr-plugin-mcp (0.1.2-1fnu0~trixie) trixie; urgency=medium
+
+  * New upstream release 0.1.2: mcp.conf sets --deny=DEL*,HITK.
+
+ -- Frank Neumann <fnu@vdr-portal.de>  Wed, 04 Nov 2026 14:28:42 +0100
+
+vdr-plugin-mcp (0.1.1-1fnu0~trixie) trixie; urgency=medium
+
+  * New upstream release 0.1.1: HITK is denied by default (deny list
+    DEL*,HITK).
+
+ -- Frank Neumann <fnu@vdr-portal.de>  Wed, 04 Nov 2026 13:40:37 +0100
+
+vdr-plugin-mcp (0.1.0-1fnu0~trixie) trixie; urgency=medium
+
+  * Initial release.
+
+ -- Frank Neumann <fnu@vdr-portal.de>  Wed, 04 Nov 2026 12:53:03 +0100

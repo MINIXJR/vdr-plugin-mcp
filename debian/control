@@ -1,0 +1,23 @@
+Source: vdr-plugin-mcp
+Section: video
+Priority: optional
+Maintainer: Frank Neumann <fnu@vdr-portal.de>
+Build-Depends: debhelper-compat (= 13), vdr-dev (>= 2.8.4~), pkgconf,
+ nlohmann-json3-dev, libsystemd-dev, libssl-dev
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/unf/vdr-plugin-mcp
+
+Package: vdr-plugin-mcp
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${vdr:Depends}, socat
+Description: VDR plugin offering the SVDRP commands as MCP server
+ Model Context Protocol (MCP) server for AI assistants like Claude. Every
+ SVDRP command of VDR and of the loaded plugins becomes a tool, built at
+ runtime from SVDRP HELP; further tools show the system log, read and set
+ editing marks and regenerate the index of recordings.
+ .
+ Locally the server listens on 127.0.0.1, other machines connect through
+ SSH and socat. Optionally it speaks MCP over HTTPS with API keys (read only
+ or read/write) for clients without SSH. Commands can be hidden with a deny
+ list (default DEL*,HITK).
