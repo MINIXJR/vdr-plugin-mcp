@@ -38,6 +38,9 @@ Two ways lead to the server:
 - over HTTPS with API keys, for clients without SSH: other machines in the
   LAN, agents, automation tools. Off by default.
 
+For several VDRs, run the plugin on each of them and add each one as its
+own server in the client (vdr1, vdr2, ...).
+
 Requirements
 ------------
 
@@ -45,7 +48,7 @@ Requirements
   svdrphosts.conf (the default), as the plugin talks to the local SVDRP port
 - for building: nlohmann-json, libsystemd, OpenSSL 3
 - for the SSH way: socat on the VDR host
-- an MCP client, e.g. Claude Code, Claude Desktop or any other client
+- an MCP client, e.g. Claude Code, or any other client
   that speaks MCP over stdio or "Streamable HTTP"
 
 Quick start over SSH
