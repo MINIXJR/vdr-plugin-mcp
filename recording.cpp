@@ -198,6 +198,12 @@ std::string StartGenIndex(int Id, bool &IsError)
          " shows the errors in the line O, and vdr_log shows 'mcp: genindex done'.";
 }
 
+bool GenIndexRunning(void)
+{
+  cMutexLock lock(&jobMutex);
+  return job && job->Active();
+}
+
 void StopGenIndex(void)
 {
   cMutexLock lock(&jobMutex);

@@ -127,7 +127,8 @@ These use VDR's plugin interface directly (cMarks, GenerateIndex(), the
 recordings list), like other plugins do. vdr_setmarks and vdr_genindex
 refuse recordings that are being recorded, replayed or cut. vdr_setmarks
 needs the index of the recording; vdr_genindex works on one recording at a
-time and only on TS recordings, not on old PES ones.
+time and only on TS recordings, not on old PES ones. While it runs, VDR does
+not shut down automatically, and asks before a manual shutdown.
 
 Not offered: QUIT, the deny list (default DEL*,HITK) and the plugin's own
 commands (PLUG mcp ...), so no client can manage API keys.
@@ -216,7 +217,14 @@ PLUGIN.CMD a single plugin command (e.g. epgsearch.UPDS), the tools beyond
 SVDRP go by their name (e.g. vdr_setmarks). --deny= without a list offers
 every command. The Debian package ships /etc/vdr/conf.avail/mcp.conf with
 --deny=DEL*,HITK, so the file shows what is denied; without the option the
-plugin uses the same list.
+plugin uses the same list. A --deny line replaces this list, it does not
+add to it: --deny=DEL*,HITK,EDIT, not --deny=EDIT.
+
+The list must not contain blanks, as VDR splits the plugin arguments at
+blanks; the plugin refuses to start on a stray word (e.g. "HITK" from
+--deny=DEL*, HITK) and on --deny without '='. At every start the log shows
+the list in effect ("mcp: denied commands: DEL*,HITK"), or a warning if it
+is empty.
 
 MCP over HTTPS
 --------------
@@ -276,6 +284,14 @@ Troubleshooting
 The client shows the server as failed (SSH)
   The VDR host is off or asleep, or ssh asks for a password. Test
   "ssh <user>@<vdr-host> true" by hand, then reconnect in the client.
+
+VDR does not shut down
+  Over SSH the client keeps an SSH connection open as long as it runs.
+  Shutdown hooks that wait for SSH connections, like the one of
+  vdr-addon-lifeguard ("tcp ssh" in /etc/vdr/lifeguard.conf), then keep
+  VDR running. Close the client or use the HTTPS way, which leaves no
+  connection open. A running vdr_genindex also keeps VDR from shutting
+  down, on purpose.
 
 401, "missing or wrong API key"
   The key in the client is not (or no longer) on the VDR host, see
