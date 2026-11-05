@@ -304,6 +304,19 @@ vdr_log is empty
 A recording id does not fit
   VDR was restarted in between; list the recordings again with vdr_LSTR.
 
+Debian packages
+---------------
+
+The Debian packaging is kept in the branch debian/trixie of this
+repository, on top of the release tag. To build the package yourself:
+
+  git clone https://github.com/unf/vdr-plugin-mcp.git
+  cd vdr-plugin-mcp
+  git checkout debian/trixie
+  gbp buildpackage
+
+This needs git-buildpackage and vdr-dev of the VDR the plugin is built for.
+
 Options
 -------
 
