@@ -21,6 +21,9 @@ std::string WriteMarks(int Id, const std::vector<std::string> &Marks, bool &IsEr
 // counts the errors of the recording. Only one at a time.
 std::string StartGenIndex(int Id, bool &IsError);
 
+// True while an index regeneration runs, VDR must not shut down then.
+bool GenIndexRunning(void);
+
 // Waits for a running index regeneration (plugin stop).
 void StopGenIndex(void);
 

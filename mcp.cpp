@@ -21,7 +21,7 @@
 #include <ctime>
 #include <sstream>
 
-static const char *VERSION     = "0.4.1";
+static const char *VERSION     = "0.4.2";
 static const char *DESCRIPTION = trNOOP("MCP server for the SVDRP commands");
 
 static std::vector<std::string> SplitList(const char *s)
@@ -88,6 +88,7 @@ public:
   virtual bool ProcessArgs(int argc, char *argv[]);
   virtual bool Start(void);
   virtual void Stop(void);
+  virtual cString Active(void);
   virtual const char **SVDRPHelpPages(void);
   virtual cString SVDRPCommand(const char *Command, const char *Option, int &ReplyCode);
   };
@@ -138,7 +139,14 @@ bool cPluginMcp::ProcessArgs(int argc, char *argv[])
           case 'b': config.bind = optarg; break;
           case 'p': config.port = atoi(optarg); break;
           case 's': config.svdrpPort = atoi(optarg); break;
-          case 'd': config.deny = SplitList(optarg); break;
+          case 'd': config.deny = SplitList(optarg);
+                    for (auto &s : config.deny) {
+                        if (s[0] == '-') { // "--deny" without '=' swallowed the next option
+                           esyslog("mcp: --deny needs a list after '=', e.g. --deny=DEL*,HITK (got '%s')", s.c_str());
+                           return false;
+                           }
+                        }
+                    break;
           case 'm': config.maxReply = strtoul(optarg, NULL, 10); break;
           case 'l': config.logUnit = (optarg && *optarg) ? optarg : "vdr.service"; break;
           case 'w': {
@@ -159,6 +167,12 @@ bool cPluginMcp::ProcessArgs(int argc, char *argv[])
           default:  return false;
           }
         }
+  // VDR splits the plugin arguments at blanks: "--deny=DEL*, HITK" leaves a
+  // stray "HITK" that would silently not be denied
+  if (optind < argc) {
+     esyslog("mcp: unexpected argument '%s', lists must not contain blanks (e.g. --deny=DEL*,HITK)", argv[optind]);
+     return false;
+     }
   if (config.port <= 0 || config.port > 65535 || config.svdrpPort <= 0 || config.svdrpPort > 65535 ||
       config.httpPort < 0 || config.httpPort > 65535) {
      esyslog("mcp: invalid port");
@@ -179,6 +193,14 @@ bool cPluginMcp::Start(void)
   config.configDir = ConfigDirectory(Name());
   McpKeys.SetFileName(config.configDir + "/keys");
   McpKeys.Load();
+  if (config.deny.empty())
+     isyslog("mcp: WARNING: the deny list is empty, every SVDRP command is offered");
+  else {
+     std::string d;
+     for (auto &s : config.deny)
+         d += (d.empty() ? "" : ",") + s;
+     isyslog("mcp: denied commands: %s", d.c_str());
+     }
   if (!config.logUnit.empty())
      isyslog("mcp: tool vdr_log reads the journal of %s", config.logUnit.c_str());
   server = new cMcpServer(config);
@@ -190,6 +212,14 @@ bool cPluginMcp::Start(void)
         esyslog("mcp: HTTP server not started");
      }
   return true; // VDR runs on without the MCP servers
+}
+
+cString cPluginMcp::Active(void)
+{
+  // an interrupted index regeneration would leave an incomplete index
+  if (GenIndexRunning())
+     return "mcp: index regeneration running";
+  return NULL;
 }
 
 void cPluginMcp::Stop(void)

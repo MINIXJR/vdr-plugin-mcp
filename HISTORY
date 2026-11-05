@@ -1,6 +1,15 @@
 VDR Plugin 'mcp' Revision History
 ---------------------------------
 
+2026-11-05: Version 0.4.2
+
+- VDR does not shut down while vdr_genindex runs (cPlugin::Active()).
+- The deny list can no longer lose entries unnoticed: a stray argument
+  (blank in a list) or --deny without '=' stops the plugin with an error,
+  and the log shows the list in effect at every start.
+- README rewritten: quick start, examples, security, troubleshooting,
+  Debian packaging.
+
 2026-11-05: Version 0.4.1
 
 - KEYADD also shows how to use the new key: the ready command line for
