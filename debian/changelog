@@ -1,3 +1,10 @@
+vdr-plugin-mcp (0.4.2-1fnu0~noble+local-1) noble; urgency=medium
+
+  * Local build for noble against yavdr VDR 2.8.1 (Build-Depends vdr-dev
+    >= 2.8.1~)
+
+ -- VDR Builder <builder@localhost>  Sun, 08 Nov 2026 16:49:26 +0100
+
 vdr-plugin-mcp (0.4.2-1fnu0~trixie) trixie; urgency=medium
 
   * New upstream release 0.4.2: no shutdown during vdr_genindex, checked
