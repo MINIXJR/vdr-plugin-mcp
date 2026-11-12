@@ -21,7 +21,7 @@
 #include <ctime>
 #include <sstream>
 
-static const char *VERSION     = "0.4.2";
+static const char *VERSION     = "0.4.3";
 static const char *DESCRIPTION = trNOOP("MCP server for the SVDRP commands");
 
 static std::vector<std::string> SplitList(const char *s)

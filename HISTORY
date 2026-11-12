@@ -1,6 +1,11 @@
 VDR Plugin 'mcp' Revision History
 ---------------------------------
 
+2026-11-08: Version 0.4.3
+
+- Fix the Makefile: -fPIC was missing in CFLAGS and CXXFLAGS, the plugin did
+  not link when VDR's pkg-config file does not provide it.
+
 2026-11-05: Version 0.4.2
 
 - VDR does not shut down while vdr_genindex runs (cPlugin::Active()).
